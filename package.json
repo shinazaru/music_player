@@ -10,6 +10,7 @@
     "ejs": "2.3.4",
     "ffmpeg": "0.0.4",
     "fluent-ffmpeg": "^2.1.0",
+    "google-speech": "0.0.5",
     "grunt": "1.0.1",
     "grunt-contrib-clean": "1.0.0",
     "grunt-contrib-coffee": "1.0.0",
@@ -27,10 +28,12 @@
     "play-sound": "^1.1.1",
     "player": "^0.6.1",
     "rc": "1.0.1",
+    "regex": "^0.1.1",
     "sails": "~0.12.7",
     "sails-disk": "~0.10.9",
     "which": "^1.2.12",
-    "youtube-audio-stream": "0.0.28"
+    "youtube-audio-stream": "0.0.28",
+    "youtube-info": "^1.1.1"
   },
   "scripts": {
     "debug": "node debug app.js",
