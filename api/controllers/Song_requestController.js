@@ -3,6 +3,7 @@ var ffmpeg = require('fluent-ffmpeg');
 var download = require('download-file')
 var request = require('request');
 var async_module = require('async');
+const os = require('os');
 
 // https://www.npmjs.com/package/regex
 var Regex = require("regex");
@@ -98,7 +99,7 @@ module.exports = {
 					cbAsync(null ,false);
 				} else {
 					console.log('speech', song_obj.msg);
-					googleTTS(song_obj.msg, (song_obj.lacale || 'th'), 1)   // speed normal = 1 (default), slow = 0.24
+					googleTTS(song_obj.msg, (song_obj.lacale || 'th'), 0.5)   // speed normal = 1 (default), slow = 0.24
 						.then(function (url) {
 						  console.log(url); // https://translate.google.com/translate_tts?...
 							download(url, { directory: "./sound/", filename: "msg.mp3" }, function(err){
@@ -113,9 +114,15 @@ module.exports = {
 			}, play_msg = function(have_msg_sound, cbAsync){
 				if (have_msg_sound) {
 					console.log('play_msg');
-					player.play('./sound/msg.mp3', function(err){
-						cbAsync(null);
-					});
+					if (os.platform !== 'linux'){
+						player.play('./sound/msg.mp3', { afplay: ['-v', 3 ] }, function(err){
+							cbAsync(null);
+						});
+					} else {
+						player.play('./sound/msg.mp3', function(err){
+							cbAsync(null);
+						});
+					}
 				} else {
 					cbAsync(null);
 				}
