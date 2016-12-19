@@ -10,28 +10,8 @@ var Regex = require("regex");
 // https://www.npmjs.com/package/youtube-info
 var fetchVideoInfo = require('youtube-info');
 
-// https://www.npmjs.com/package/google-speech
-var google_speech = require('google-speech');
-
-// google_speech.TTS({
-//   text: 'Привет, мир!',
-//   file: 'data/hello.mp3'
-//   }, function(){
-//     console.log('done');
-//   }
-// );
-//
-// //or so
-//
-// google_speech.TTS({
-//   text: 'Привет, мир!',
-//   file: 'data/hello.mp3',
-//   language: 'ru',
-//   encoding: 'UTF-8'
-//   }, function(){
-//     console.log('done');
-//   }
-// );
+// https://www.npmjs.com/package/google-tts-api
+var googleTTS = require('google-tts-api');
 
 var player = require('play-sound')(opts = {});
 
@@ -93,7 +73,8 @@ module.exports = {
 			var song_detail_obj = {
 				id: utube_id || '',
 				url: vde_info.url || '',
-				title: vde_info.title || ''
+				title: vde_info.title || '',
+				msg: msg
 			}
 
 			if (song_que.length < 1) {
@@ -111,24 +92,53 @@ module.exports = {
 		var options = { directory: "./sound/", filename: "play.mp3" }
 		var load_url = 'http://localhost:1337/song_request/load_mp3?utb_id=' + song_que[0].url;
 
-		console.log('download', song_que[0].title);
-		download(load_url, options, function(err){
-		    if (err) throw err
-		    console.log("downloaded");
-				res.status(201).send(_.map(song_que, function(song){ return song.title }))
+		async_module.waterfall([
+			download_msg = function(cbAsync){
+				if (song_obj.msg === ''){
+					cbAsync(null ,false);
+				} else {
+					console.log('speech', song_obj.msg);
+					googleTTS(song_obj.msg, (song_obj.lacale || 'th'), 1)   // speed normal = 1 (default), slow = 0.24
+						.then(function (url) {
+						  console.log(url); // https://translate.google.com/translate_tts?...
+							download(url, { directory: "./sound/", filename: "msg.mp3" }, function(err){
+								cbAsync(null ,true);
+							});
+						})
+						.catch(function (err) {
+						  console.error(err.stack);
+							cbAsync(null ,false);
+						});
+				}
+			}, play_msg = function(have_msg_sound, cbAsync){
+				if (have_msg_sound) {
+					console.log('play_msg');
+					player.play('./sound/msg.mp3', function(err){
+						cbAsync(null);
+					});
+				} else {
+					cbAsync(null);
+				}
+			}
+		],asyncComplete = function(data){
+			console.log('download', song_que[0].title);
+			download(load_url, options, function(err){
+			    if (err) throw err
+			    console.log("downloaded");
+					res.status(201).send(_.map(song_que, function(song){ return song.title }))
 
-				player.play('./sound/play.mp3', function(err){
-  				if (err) throw err
-					if(song_que.length == 0){
-						console.log('playend!');
-					} else {
-						console.log('play end!', song_que.shift());
-						console.log('play next!', song_que[0]);
-					request('http://localhost:1337/song_request/play');
-					}
-				})
+					player.play('./sound/play.mp3', function(err){
+						if (err) throw err
+						if(song_que.length == 0){
+							console.log('playend!');
+						} else {
+							console.log('play end!', song_que.shift());
+							console.log('play next!', song_que[0]);
+						request('http://localhost:1337/song_request/play');
+						}
+					})
+			});
 		});
-
 	},
 
 	load_mp3: function(req, res){
